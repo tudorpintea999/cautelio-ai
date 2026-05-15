@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Clause — AI Contract Compliance",
+  "version": "1.0.0",
+  "description": "Highlights dangerous contract clauses and tells you what to negotiate.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://api.cautelioai.xyz/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

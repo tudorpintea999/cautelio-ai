@@ -1,0 +1,456 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --navy: #0b1320;
+  --navy-light: #101a2a;
+  --navy-border: #1e2d42;
+  --gold: #c4a35a;
+  --gold-dim: #8a6f35;
+  --crimson: #b91c1c;
+  --amber: #b45309;
+  --green: #15803d;
+  --text: #e8e4d9;
+  --text-muted: #7a8899;
+  --text-dim: #4a5a72;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--navy);
+  color: var(--text);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ── Nav ── */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--navy-border);
+  position: sticky;
+  top: 0;
+  background: rgba(11, 19, 32, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+.nav-logo {
+  font-family: Georgia, serif;
+  font-size: 20px;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+.nav-logo .mark {
+  color: var(--gold);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-cta {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold) !important;
+  padding: 8px 20px;
+  border-radius: 3px;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s !important;
+}
+
+.nav-cta:hover {
+  background: var(--gold) !important;
+  color: var(--navy) !important;
+  text-decoration: none !important;
+}
+
+/* ── Hero ── */
+.hero {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 100px 40px 80px;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  font-family: Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+
+.hero h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(36px, 6vw, 58px);
+  font-weight: normal;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.hero h1 em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-muted);
+  max-width: 540px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 14px 32px;
+  background: var(--gold);
+  color: var(--navy);
+  font-family: Georgia, serif;
+  font-size: 15px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #d4b46a;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 14px 32px;
+  border: 1px solid var(--navy-border);
+  color: var(--text-muted);
+  font-size: 15px;
+  border-radius: 3px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.hero-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--navy-border);
+  margin: 0;
+}
+
+/* ── Sections ── */
+section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 80px 40px;
+}
+
+.section-label {
+  font-family: Georgia, serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
+section h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: normal;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+section .lead {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 56px;
+}
+
+/* ── Risk cards ── */
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.risk-card {
+  background: var(--navy-light);
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  padding: 24px;
+  border-left: 3px solid var(--navy-border);
+}
+
+.risk-card.high   { border-left-color: var(--crimson); }
+.risk-card.medium { border-left-color: var(--amber); }
+.risk-card.low    { border-left-color: var(--green); }
+
+.risk-badge {
+  display: inline-block;
+  font-family: Georgia, serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.high  .risk-badge { color: var(--crimson); }
+.medium .risk-badge { color: var(--amber); }
+.low   .risk-badge { color: var(--green); }
+
+.risk-card h3 {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.risk-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── How it works ── */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 40px;
+}
+
+.step-number {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  color: var(--navy-border);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.step h3 {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.step p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+/* ── Freelancer callout ── */
+.callout {
+  background: var(--navy-light);
+  border: 1px solid var(--navy-border);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  padding: 40px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.callout-text h2 {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: normal;
+  margin-bottom: 12px;
+}
+
+.callout-text p {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.callout-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.callout-list li {
+  font-size: 14px;
+  color: var(--text-muted);
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.callout-list li::before {
+  content: '§';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-family: Georgia, serif;
+}
+
+/* ── CTA ── */
+.cta-section {
+  text-align: center;
+  padding: 100px 40px;
+  border-top: 1px solid var(--navy-border);
+}
+
+.cta-section h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: normal;
+  margin-bottom: 16px;
+}
+
+.cta-section p {
+  color: var(--text-muted);
+  font-size: 17px;
+  margin-bottom: 40px;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--navy-border);
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.footer-logo {
+  font-family: Georgia, serif;
+  letter-spacing: 0.08em;
+}
+
+.footer-logo .mark {
+  color: var(--gold);
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-links a {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.footer-links a:hover {
+  color: var(--text-muted);
+}
+
+/* ── Privacy page ── */
+.prose {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 80px 40px;
+}
+
+.prose h1 {
+  font-family: Georgia, serif;
+  font-size: 36px;
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.prose .date {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 48px;
+  display: block;
+}
+
+.prose h2 {
+  font-family: Georgia, serif;
+  font-size: 20px;
+  font-weight: normal;
+  margin: 40px 0 12px;
+  color: var(--gold);
+}
+
+.prose p, .prose li {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 14px;
+}
+
+.prose ul {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+.prose a {
+  color: var(--gold);
+}
+
+@media (max-width: 680px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  .hero { padding: 60px 20px 60px; }
+  section { padding: 60px 20px; }
+  .callout { grid-template-columns: 1fr; padding: 28px 24px; }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+  .prose { padding: 60px 20px; }
+}

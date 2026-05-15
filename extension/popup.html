@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <div class="logo">
+        <span class="section-mark">&sect;</span> CLAUSE
+      </div>
+      <div class="tagline">AI Contract Compliance</div>
+    </header>
+
+    <div class="controls">
+      <span class="toggle-label">Freelancer mode</span>
+      <label class="switch">
+        <input type="checkbox" id="freelancerMode" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <button id="analyzeBtn" class="btn-analyze">Analyze Contract</button>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Scanning clauses&hellip;</span>
+    </div>
+
+    <div id="error" class="error-box hidden"></div>
+
+    <div id="results" class="results hidden">
+      <div id="riskBanner" class="risk-banner">
+        <span class="risk-label">OVERALL RISK</span>
+        <span id="riskValue" class="risk-value">—</span>
+      </div>
+
+      <p id="summary" class="summary"></p>
+
+      <div id="freelancerSection" class="section hidden">
+        <div class="section-title">Freelancer Flags</div>
+        <ul id="freelancerList" class="flag-list"></ul>
+      </div>
+
+      <div class="section-title">Risky Clauses</div>
+      <div id="clauseList"></div>
+
+      <button id="clearBtn" class="btn-clear">Clear Highlights</button>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
