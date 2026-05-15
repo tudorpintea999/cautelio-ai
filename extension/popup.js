@@ -1,15 +1,89 @@
+const setupEl = document.getElementById('setup');
+const mainEl = document.getElementById('main');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveKeyBtn = document.getElementById('saveKeyBtn');
+const keyError = document.getElementById('keyError');
+const logoutBtn = document.getElementById('logoutBtn');
+
 const analyzeBtn = document.getElementById('analyzeBtn');
 const freelancerToggle = document.getElementById('freelancerMode');
 const loadingEl = document.getElementById('loading');
 const errorEl = document.getElementById('error');
 const resultsEl = document.getElementById('results');
 const riskValue = document.getElementById('riskValue');
-const riskBanner = document.getElementById('riskBanner');
 const summaryEl = document.getElementById('summary');
 const clauseList = document.getElementById('clauseList');
 const freelancerSection = document.getElementById('freelancerSection');
 const freelancerList = document.getElementById('freelancerList');
 const clearBtn = document.getElementById('clearBtn');
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+chrome.storage.sync.get('apiKey', ({ apiKey }) => {
+  if (apiKey) {
+    showMain();
+  } else {
+    showSetup();
+  }
+});
+
+function showSetup() {
+  setupEl.classList.remove('hidden');
+  mainEl.classList.add('hidden');
+}
+
+function showMain() {
+  setupEl.classList.add('hidden');
+  mainEl.classList.remove('hidden');
+}
+
+// ── API key setup ─────────────────────────────────────────────────────────────
+
+saveKeyBtn.addEventListener('click', async () => {
+  const key = apiKeyInput.value.trim();
+  if (!key) return;
+
+  saveKeyBtn.disabled = true;
+  saveKeyBtn.textContent = 'Validating…';
+  keyError.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${await getApiBase()}/validate-key`, {
+      headers: { 'X-API-Key': key },
+    });
+
+    if (!res.ok) {
+      throw new Error('Invalid or inactive key. Check the key and try again.');
+    }
+
+    chrome.storage.sync.set({ apiKey: key }, () => {
+      showMain();
+    });
+  } catch (err) {
+    keyError.textContent = err.message;
+    keyError.classList.remove('hidden');
+  } finally {
+    saveKeyBtn.disabled = false;
+    saveKeyBtn.textContent = 'Save Key';
+  }
+});
+
+logoutBtn.addEventListener('click', () => {
+  chrome.storage.sync.remove('apiKey', () => {
+    resultsEl.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    apiKeyInput.value = '';
+    showSetup();
+  });
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function getApiBase() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get('apiKey', () => resolve('https://api.cautelioai.xyz'));
+  });
+}
 
 function setLoading(on) {
   analyzeBtn.disabled = on;
@@ -31,10 +105,9 @@ function renderRisk(level) {
   riskValue.className = `risk-value ${level}`;
 }
 
-function renderClause(clause, index) {
+function renderClause(clause) {
   const card = document.createElement('div');
   card.className = `clause-card ${clause.risk_level || 'low'}`;
-
   const typeLabel = (clause.type || 'clause').replace(/_/g, ' ');
 
   card.innerHTML = `
@@ -58,7 +131,9 @@ function renderClause(clause, index) {
   return card;
 }
 
-analyzeBtn.addEventListener('click', async () => {
+// ── Analyze ───────────────────────────────────────────────────────────────────
+
+analyzeBtn.addEventListener('click', () => {
   clearError();
   resultsEl.classList.add('hidden');
   setLoading(true);
@@ -74,6 +149,10 @@ analyzeBtn.addEventListener('click', async () => {
       }
 
       if (!response || response.error) {
+        if (response?.error === 'no_key') {
+          chrome.storage.sync.remove('apiKey', () => showSetup());
+          return;
+        }
         showError(response ? response.error : 'No response from background.');
         return;
       }
@@ -91,7 +170,7 @@ analyzeBtn.addEventListener('click', async () => {
         none.textContent = 'No high-risk clauses detected.';
         clauseList.appendChild(none);
       } else {
-        clauses.forEach((c, i) => clauseList.appendChild(renderClause(c, i)));
+        clauses.forEach((c) => clauseList.appendChild(renderClause(c)));
       }
 
       freelancerList.innerHTML = '';

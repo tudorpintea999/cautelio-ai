@@ -9,45 +9,63 @@
 
     <header>
       <div class="logo">
-        <span class="section-mark">&sect;</span> CLAUSE
+        <span class="section-mark">&sect;</span> CAUTELIO
       </div>
       <div class="tagline">AI Contract Compliance</div>
     </header>
 
-    <div class="controls">
-      <span class="toggle-label">Freelancer mode</span>
-      <label class="switch">
-        <input type="checkbox" id="freelancerMode" />
-        <span class="slider"></span>
-      </label>
+    <!-- Setup screen (no API key yet) -->
+    <div id="setup" class="hidden">
+      <p class="setup-intro">Paste your API key to activate Cautelio.</p>
+      <input id="apiKeyInput" type="text" class="api-key-input"
+             placeholder="caut_..." spellcheck="false" autocomplete="off" />
+      <button id="saveKeyBtn" class="btn-analyze">Save Key</button>
+      <div id="keyError" class="error-box hidden"></div>
+      <p class="setup-link">
+        No key yet?
+        <a href="https://cautelioai.xyz/#pricing" target="_blank">Get a subscription →</a>
+      </p>
     </div>
 
-    <button id="analyzeBtn" class="btn-analyze">Analyze Contract</button>
-
-    <div id="loading" class="loading hidden">
-      <div class="spinner"></div>
-      <span>Scanning clauses&hellip;</span>
-    </div>
-
-    <div id="error" class="error-box hidden"></div>
-
-    <div id="results" class="results hidden">
-      <div id="riskBanner" class="risk-banner">
-        <span class="risk-label">OVERALL RISK</span>
-        <span id="riskValue" class="risk-value">—</span>
+    <!-- Main screen -->
+    <div id="main" class="hidden">
+      <div class="controls">
+        <span class="toggle-label">Freelancer mode</span>
+        <label class="switch">
+          <input type="checkbox" id="freelancerMode" />
+          <span class="slider"></span>
+        </label>
       </div>
 
-      <p id="summary" class="summary"></p>
+      <button id="analyzeBtn" class="btn-analyze">Analyze Contract</button>
 
-      <div id="freelancerSection" class="section hidden">
-        <div class="section-title">Freelancer Flags</div>
-        <ul id="freelancerList" class="flag-list"></ul>
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <span>Scanning clauses&hellip;</span>
       </div>
 
-      <div class="section-title">Risky Clauses</div>
-      <div id="clauseList"></div>
+      <div id="error" class="error-box hidden"></div>
 
-      <button id="clearBtn" class="btn-clear">Clear Highlights</button>
+      <div id="results" class="results hidden">
+        <div id="riskBanner" class="risk-banner">
+          <span class="risk-label">OVERALL RISK</span>
+          <span id="riskValue" class="risk-value">—</span>
+        </div>
+
+        <p id="summary" class="summary"></p>
+
+        <div id="freelancerSection" class="section hidden">
+          <div class="section-title">Freelancer Flags</div>
+          <ul id="freelancerList" class="flag-list"></ul>
+        </div>
+
+        <div class="section-title">Risky Clauses</div>
+        <div id="clauseList"></div>
+
+        <button id="clearBtn" class="btn-clear">Clear Highlights</button>
+      </div>
+
+      <button id="logoutBtn" class="btn-logout">Change API Key</button>
     </div>
 
   </div>

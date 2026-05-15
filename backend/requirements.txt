@@ -4,3 +4,5 @@ anthropic==0.40.0
 python-dotenv==1.0.1
 pypdf==4.3.1
 python-multipart==0.0.12
+stripe==10.5.0
+resend==0.8.0

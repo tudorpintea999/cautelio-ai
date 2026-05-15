@@ -1,16 +1,20 @@
-// Switch to http://localhost:8000 for local development
 const API_BASE = 'https://api.cautelioai.xyz';
 
 function isPdf(url) {
   try {
-    const path = new URL(url).pathname.toLowerCase();
-    return path.endsWith('.pdf');
+    return new URL(url).pathname.toLowerCase().endsWith('.pdf');
   } catch {
     return false;
   }
 }
 
-async function analyzeHtmlPage(tab, freelancerMode) {
+async function getApiKey() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get('apiKey', (r) => resolve(r.apiKey || null));
+  });
+}
+
+async function analyzeHtmlPage(tab, apiKey, freelancerMode) {
   await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     files: ['content.js'],
@@ -27,7 +31,10 @@ async function analyzeHtmlPage(tab, freelancerMode) {
 
   const res = await fetch(`${API_BASE}/analyze`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    },
     body: JSON.stringify({ text, freelancer_mode: freelancerMode }),
   });
 
@@ -37,7 +44,6 @@ async function analyzeHtmlPage(tab, freelancerMode) {
 
   const analysis = await res.json();
 
-  // Highlight clauses in-page
   await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     files: ['content.js'],
@@ -51,7 +57,7 @@ async function analyzeHtmlPage(tab, freelancerMode) {
   return { ok: true, analysis };
 }
 
-async function analyzePdf(tab, freelancerMode) {
+async function analyzePdf(tab, apiKey, freelancerMode) {
   const pdfRes = await fetch(tab.url, { credentials: 'include' });
   if (!pdfRes.ok) {
     return { error: `Could not fetch PDF (${pdfRes.status}). The file may require login.` };
@@ -64,6 +70,7 @@ async function analyzePdf(tab, freelancerMode) {
 
   const res = await fetch(`${API_BASE}/analyze-pdf`, {
     method: 'POST',
+    headers: { 'X-API-Key': apiKey },
     body: form,
   });
 
@@ -72,7 +79,6 @@ async function analyzePdf(tab, freelancerMode) {
   }
 
   const analysis = await res.json();
-  // No in-page highlighting for native PDF viewer
   return { ok: true, analysis, isPdf: true };
 }
 
@@ -81,14 +87,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   (async () => {
     try {
+      const apiKey = await getApiKey();
+      if (!apiKey) {
+        sendResponse({ error: 'no_key' });
+        return;
+      }
+
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const result = isPdf(tab.url)
-        ? await analyzePdf(tab, msg.freelancer_mode || false)
-        : await analyzeHtmlPage(tab, msg.freelancer_mode || false);
+        ? await analyzePdf(tab, apiKey, msg.freelancer_mode || false)
+        : await analyzeHtmlPage(tab, apiKey, msg.freelancer_mode || false);
+
       sendResponse(result);
     } catch (err) {
       const message = err.message.includes('fetch')
-        ? 'Cannot reach backend. Is it running on port 8000?'
+        ? 'Cannot reach backend. Is it running?'
         : err.message;
       sendResponse({ error: message });
     }
