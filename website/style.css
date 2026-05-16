@@ -72,7 +72,7 @@ nav {
 
 .nav-links a {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   transition: color 0.15s;
 }
 
@@ -87,7 +87,7 @@ nav {
   color: var(--gold) !important;
   padding: 8px 20px;
   border-radius: 3px;
-  font-size: 12px;
+  font-size: 14px;
   transition: background 0.15s, color 0.15s !important;
 }
 
@@ -607,14 +607,14 @@ footer {
 
 .faq-item h3 {
   font-family: Georgia, serif;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: normal;
   color: var(--text);
   margin-bottom: 10px;
 }
 
 .faq-item p {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   line-height: 1.7;
 }
