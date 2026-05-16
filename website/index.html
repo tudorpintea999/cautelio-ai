@@ -6,6 +6,12 @@
   <title>Cautelio AI — Read Before You Sign</title>
   <meta name="description" content="AI contract compliance for freelancers and small businesses. Highlights dangerous clauses, explains each risk in plain English, and tells you what to negotiate. $4/month." />
   <link rel="stylesheet" href="style.css" />
+  <script>
+    function goToCheckout(e) {
+      e.preventDefault();
+      window.location.href = 'https://api.cautelioai.xyz/checkout';
+    }
+  </script>
 </head>
 <body>
 
@@ -182,7 +188,7 @@
           <li>Negotiation tips on every flagged clause</li>
         </ul>
 
-        <a href="https://api.cautelioai.xyz/checkout" class="btn-primary btn-block">Add to Chrome — $4 / month</a>
+        <a href="https://api.cautelioai.xyz/checkout" onclick="goToCheckout(event)" class="btn-primary btn-block">Add to Chrome — $4 / month</a>
         <p class="pricing-note">Cancel anytime. No questions asked.</p>
       </div>
 
@@ -224,7 +230,7 @@
   <div class="cta-section">
     <h2>Stop agreeing to things<br />you haven't read.</h2>
     <p>$4 a month. Cancel anytime. Works on any contract page.</p>
-    <a href="https://api.cautelioai.xyz/checkout" class="btn-primary">Add to Chrome</a>
+    <a href="https://api.cautelioai.xyz/checkout" onclick="goToCheckout(event)" class="btn-primary">Add to Chrome</a>
   </div>
 
   <footer>
