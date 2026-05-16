@@ -1,105 +1,129 @@
-import secrets
+import logging
+import os
 
 import stripe
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse, RedirectResponse
 
-from database import get_by_api_key, init_db, create_subscription, update_status
+load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+from database import (activate_user, create_user, deactivate_user, get_user_by_email,
+                      get_user_by_key, init_db)
 from services.analyze import analyze_contract
+from services.email import send_welcome_email
 from services.extract_pdf import extract_text as extract_pdf_text
-from services.stripe_service import construct_webhook_event, create_checkout_session
-from services.email_service import send_api_key_email
+
+init_db()
 
 app = FastAPI(title="Cautelio API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_origins=["chrome-extension://*", "http://localhost:*", "*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 
-@app.on_event("startup")
-def startup():
-    init_db()
+# ── Auth ─────────────────────────────────────────────────────────────────────
+
+def require_user(api_key: str):
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key required. Get yours at cautelioai.xyz")
+    user = get_user_by_key(api_key)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    if user["status"] != "active" or user["plan"] != "paid":
+        raise HTTPException(status_code=403, detail="No active subscription. Visit cautelioai.xyz to subscribe.")
+    return user
 
 
-# ── Auth dependency ──────────────────────────────────────────────────────────
+# ── Health ────────────────────────────────────────────────────────────────────
 
-async def require_key(x_api_key: str = Header(None)):
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="API key required.")
-    row = get_by_api_key(x_api_key)
-    if not row or row["status"] != "active":
-        raise HTTPException(status_code=401, detail="Invalid or inactive API key.")
-    return row
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
-# ── Payment ──────────────────────────────────────────────────────────────────
+# ── Key validation ────────────────────────────────────────────────────────────
+
+@app.get("/validate-key")
+def validate_key(x_api_key: str = Header(...)):
+    user = require_user(x_api_key)
+    return {"ok": True, "email": user["email"]}
+
+
+# ── Payment ───────────────────────────────────────────────────────────────────
 
 @app.get("/checkout")
 def checkout():
-    url = create_checkout_session()
-    return RedirectResponse(url)
+    session = stripe.checkout.Session.create(
+        api_key=os.environ["STRIPE_SECRET_KEY"],
+        payment_method_types=["card"],
+        mode="subscription",
+        line_items=[{"price": os.environ["STRIPE_PRICE_ID"], "quantity": 1}],
+        success_url=f"{os.environ['FRONTEND_URL']}/success.html?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{os.environ['FRONTEND_URL']}/cancel.html",
+    )
+    return RedirectResponse(session.url)
 
 
-@app.post("/webhook")
+@app.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
-    sig = request.headers.get("stripe-signature")
+    sig = request.headers.get("stripe-signature", "")
+    secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
     try:
-        event = construct_webhook_event(payload, sig)
-    except (ValueError, stripe.error.SignatureVerificationError):
-        raise HTTPException(status_code=400, detail="Invalid webhook.")
+        event = stripe.Webhook.construct_event(payload, sig, secret)
+    except stripe.errors.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid signature.")
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        customer_id = session["customer"]
-        subscription_id = session["subscription"]
-        email = session["customer_details"]["email"]
+        email = (session.get("customer_details") or {}).get("email")
+        if email:
+            existing = get_user_by_email(email)
+            if not existing:
+                create_user(email)
+            activate_user(email)
+            user = get_user_by_email(email)
+            sent = send_welcome_email(email, user["api_key"])
+            logger.info("Activated user: %s | email sent: %s", email, sent)
 
-        api_key = "caut_" + secrets.token_urlsafe(32)
-        create_subscription(api_key, customer_id, subscription_id, email)
-        send_api_key_email(email, api_key)
+    elif event["type"] in ("customer.subscription.deleted", "customer.subscription.paused"):
+        session = event["data"]["object"]
+        # Look up by customer ID
+        customer = stripe.Customer.retrieve(
+            session["customer"],
+            api_key=os.environ["STRIPE_SECRET_KEY"]
+        )
+        email = customer.get("email")
+        if email:
+            deactivate_user(email)
+            logger.info("Deactivated user: %s", email)
 
-    elif event["type"] in (
-        "customer.subscription.deleted",
-        "customer.subscription.paused",
-    ):
-        sub = event["data"]["object"]
-        update_status(sub["id"], "cancelled")
-
-    elif event["type"] == "customer.subscription.resumed":
-        sub = event["data"]["object"]
-        update_status(sub["id"], "active")
-
-    return {"ok": True}
-
-
-# ── Key validation (used by extension on setup) ───────────────────────────────
-
-@app.get("/validate-key")
-async def validate_key(sub=Depends(require_key)):
-    return {"ok": True, "email": sub["email"]}
+    return JSONResponse({"status": "ok"})
 
 
 # ── Analysis ──────────────────────────────────────────────────────────────────
 
-class AnalyzeRequest(BaseModel):
-    text: str
-    freelancer_mode: bool = False
-
-
 @app.post("/analyze")
-async def analyze(req: AnalyzeRequest, _=Depends(require_key)):
-    if len(req.text.strip()) < 100:
+async def analyze(
+    text: str = Form(...),
+    freelancer_mode: str = Form("false"),
+    x_api_key: str = Header(...),
+):
+    require_user(x_api_key)
+    if len(text.strip()) < 100:
         raise HTTPException(status_code=400, detail="Contract text too short.")
     try:
-        return await analyze_contract(req.text, req.freelancer_mode)
+        return await analyze_contract(text, freelancer_mode.lower() == "true")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -108,8 +132,9 @@ async def analyze(req: AnalyzeRequest, _=Depends(require_key)):
 async def analyze_pdf(
     file: UploadFile = File(...),
     freelancer_mode: str = Form("false"),
-    _=Depends(require_key),
+    x_api_key: str = Header(...),
 ):
+    require_user(x_api_key)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="File must be a PDF.")
     try:

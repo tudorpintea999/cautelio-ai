@@ -29,13 +29,14 @@ async function analyzeHtmlPage(tab, apiKey, freelancerMode) {
     return { error: 'Not enough text found on this page. Make sure the contract is visible.' };
   }
 
+  const form = new FormData();
+  form.append('text', text);
+  form.append('freelancer_mode', freelancerMode ? 'true' : 'false');
+
   const res = await fetch(`${API_BASE}/analyze`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': apiKey,
-    },
-    body: JSON.stringify({ text, freelancer_mode: freelancerMode }),
+    headers: { 'X-API-Key': apiKey },
+    body: form,
   });
 
   if (!res.ok) {

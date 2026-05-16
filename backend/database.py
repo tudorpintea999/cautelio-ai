@@ -1,56 +1,90 @@
 import os
+import secrets
 import sqlite3
-from contextlib import contextmanager
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "cautelio.db")
 
 
-def init_db():
-    with get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS subscriptions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                api_key TEXT UNIQUE NOT NULL,
-                stripe_customer_id TEXT UNIQUE NOT NULL,
-                stripe_subscription_id TEXT UNIQUE NOT NULL,
-                email TEXT NOT NULL,
-                status TEXT DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-
-@contextmanager
-def get_conn():
+def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            email      TEXT UNIQUE NOT NULL,
+            api_key    TEXT UNIQUE NOT NULL,
+            plan       TEXT NOT NULL DEFAULT 'free',
+            status     TEXT NOT NULL DEFAULT 'active',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def create_user(email: str) -> dict:
+    api_key = "caut_" + secrets.token_urlsafe(24)
+    conn = get_db()
     try:
-        yield conn
+        conn.execute(
+            "INSERT INTO users (email, api_key) VALUES (?, ?)",
+            (email, api_key),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)
+        ).fetchone()
+        return dict(row)
+    finally:
+        conn.close()
+
+
+def get_user_by_key(api_key: str) -> dict | None:
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM users WHERE api_key = ?", (api_key,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email: str) -> dict | None:
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def activate_user(email: str):
+    conn = get_db()
+    try:
+        conn.execute(
+            "UPDATE users SET plan = 'paid', status = 'active' WHERE email = ?",
+            (email,),
+        )
         conn.commit()
     finally:
         conn.close()
 
 
-def create_subscription(api_key, stripe_customer_id, stripe_subscription_id, email):
-    with get_conn() as conn:
+def deactivate_user(email: str):
+    conn = get_db()
+    try:
         conn.execute(
-            """INSERT INTO subscriptions
-               (api_key, stripe_customer_id, stripe_subscription_id, email)
-               VALUES (?, ?, ?, ?)""",
-            (api_key, stripe_customer_id, stripe_subscription_id, email),
+            "UPDATE users SET status = 'cancelled' WHERE email = ?",
+            (email,),
         )
-
-
-def get_by_api_key(api_key: str):
-    with get_conn() as conn:
-        return conn.execute(
-            "SELECT * FROM subscriptions WHERE api_key = ?", (api_key,)
-        ).fetchone()
-
-
-def update_status(stripe_subscription_id: str, status: str):
-    with get_conn() as conn:
-        conn.execute(
-            "UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ?",
-            (status, stripe_subscription_id),
-        )
+        conn.commit()
+    finally:
+        conn.close()
