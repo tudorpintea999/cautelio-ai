@@ -86,6 +86,19 @@ async def stripe_webhook(request: Request):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
+
+        # Only process payments for Cautelio's price — ignore other products (e.g. Nottura)
+        expected_price = os.environ.get("STRIPE_PRICE_ID")
+        if expected_price:
+            line_items = stripe.checkout.Session.list_line_items(
+                session["id"],
+                api_key=os.environ["STRIPE_SECRET_KEY"],
+            )
+            price_ids = [item["price"]["id"] for item in line_items.get("data", [])]
+            if expected_price not in price_ids:
+                logger.info("Webhook ignored: price %s not for Cautelio", price_ids)
+                return JSONResponse({"status": "ignored"})
+
         email = (session.get("customer_details") or {}).get("email")
         if email:
             existing = get_user_by_email(email)
