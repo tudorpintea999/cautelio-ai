@@ -1,12 +1,13 @@
 import json
 import os
+import re
 
 import anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
 
-_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+_client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 _SYSTEM_PROMPT = """You are a contract compliance analyst specializing in freelance and SMB agreements. Identify clauses that are dangerous, one-sided, or that a non-lawyer would miss.
 
@@ -53,7 +54,7 @@ async def analyze_contract(text: str, freelancer_mode: bool) -> dict:
         else ""
     )
 
-    message = _client.messages.create(
+    message = await _client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=4096,
         system=[
@@ -73,9 +74,14 @@ async def analyze_contract(text: str, freelancer_mode: bool) -> dict:
 
     raw = message.content[0].text.strip()
 
-    # Strip markdown code fences if Claude wraps the JSON
+    # Strip markdown code fences if present
     if raw.startswith("```"):
         lines = raw.split("\n")
         raw = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+
+    # Extract JSON object if Claude adds extra text around it
+    match = re.search(r'\{.*\}', raw, re.DOTALL)
+    if match:
+        raw = match.group(0)
 
     return json.loads(raw)
